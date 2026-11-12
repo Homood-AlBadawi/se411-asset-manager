@@ -1,134 +1,173 @@
 # AssetTrack — IT Asset Management
 
-**SE411 Software Engineering — Project Part 1 (Fall 2026/27)**
+**SE411 Software Engineering — Project (Fall 2026/27)**
 Prince Sultan University · Instructor: Dr. Skander Turki
 
-A React frontend for managing an organisation's IT assets — laptops, desktops,
-monitors, servers, networking gear, printers, mobile devices and peripherals.
-The user can **add, update, delete, search, filter, sort and display** assets.
+A full-stack application for managing an organisation's IT assets — laptops,
+desktops, monitors, servers, networking gear, printers, mobile devices and
+peripherals.
 
-In Part 1 the inventory is a plain collection of JavaScript objects held in
-memory. There is no database and no backend; those arrive in Part 2.
+- **Part 1** — a React frontend: add, update, delete, search, filter, sort and display assets.
+- **Part 2** — a **Java Spring Boot server** with a REST API and an H2 database,
+  integrated with the React frontend, with a **JUnit 5 + Mockito** test suite.
 
 ---
 
 ## Team
 
-| Name | Student ID | Responsibility |
-|---|---|---|
-| Homood AlBadawi | 221110514 | Frontend architecture, state management, testing |
-| Malik Tariq | 221110513 | UI design, components, documentation |
+| Name | Student ID |
+|---|---|
+| Homood AlBadawi | 221110514 |
+| Malik Tariq | 221110513 |
 
 ---
 
-## Quick start
+## Running the application
 
-Requires **Node.js 18 or newer**.
+Two processes: the Spring backend on port **3000** and the React frontend on port **5173**.
+Start the backend first.
+
+**Requirements:** Java 21 (or newer) and Node.js 18 (or newer). Maven is not needed —
+the backend ships the Maven wrapper (`mvnw`).
+
+### 1. Backend (Spring Boot)
 
 ```bash
-npm install     # install dependencies
-npm run dev     # start the dev server on http://localhost:5173
-npm test        # run the test suite (65 tests)
-npm run build   # production build into dist/
-npm run preview # serve the production build locally
+cd backend/assets
+./mvnw spring-boot:run
+```
+
+Wait for `Tomcat started on port 3000`. The API is then at
+`http://localhost:3000/api/v1/assets`.
+
+### 2. Frontend (React)
+
+In a second terminal, from the repository root:
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+### Tests
+
+```bash
+cd backend/assets
+./mvnw test        # 22 backend tests — JUnit 5 + Mockito
+```
+
+```bash
+npm test           # 73 frontend tests — Vitest + React Testing Library
 ```
 
 ---
 
-## Features
+## Part 2 requirements
 
-| # | Requirement from the brief | Where it lives |
+| # | Requirement from the brief | Where it is |
 |---|---|---|
-| 1 | React project | Vite + React 18, `src/` |
-| 2 | Menu to navigate between features | `src/components/Navbar.jsx` + React Router in `src/App.jsx` |
-| 3a | **Add** elements | `src/pages/AddAssetPage.jsx`, `src/components/AssetForm.jsx` |
-| 3b | **Update** elements | `src/pages/EditAssetPage.jsx` |
-| 3c | **Remove** elements | `src/pages/AssetsPage.jsx` + `ConfirmDialog` |
-| 3d | **Search** elements | `src/components/SearchBar.jsx`, `searchAssets()` |
-| 3e | **Display** elements | `src/components/AssetTable.jsx`, `src/pages/Dashboard.jsx` |
-| 4 | About page with team names and IDs | `src/pages/AboutPage.jsx`, linked from the menu |
+| 1 | The Java application is a Spring server | `backend/assets` — Spring Boot 4.1, Java 21 |
+| 2 | Add an element | `POST /api/v1/assets` · **Add Asset** page |
+| 3 | Search for an element by id | `GET /api/v1/assets/{id}` · **Find by ID** box on the Assets page |
+| 4 | Search all elements, display paginated results | `GET /api/v1/assets?page=&size=&sort=` · table with First / Previous / Next / Last and 5 / 10 / 20 per page |
+| 5 | Update an element | `PUT /api/v1/assets/{id}` · **Edit** page |
+| 6 | Unit test suite for the backend (JUnit + Mockito) | `backend/assets/src/test` — 22 tests |
 
-Beyond the minimum:
-
-- Three filter dropdowns (category, status, department) that combine with search.
-- Click-to-sort on every table column, ascending and descending.
-- Form validation: required fields, tag format, duplicate-tag detection, numeric
-  and date range checks.
-- Confirmation dialog before any delete, plus a toast confirming it happened.
-- Dashboard with totals, a status breakdown and a category bar chart.
-- Empty states and a 404 route.
-- Responsive layout and accessible markup (labelled controls, `aria-sort`,
-  `role="status"` live regions).
+Delete (`DELETE /api/v1/assets/{id}`) is also implemented, because the Part 1 frontend has it.
 
 ---
 
-## Pages
+## REST API
 
-| Route | Page | Purpose |
-|---|---|---|
-| `/` | Dashboard | Counts by status and category, total purchase value |
-| `/assets` | Assets | Search, filter, sort, delete |
-| `/assets/new` | Add Asset | Create a new asset |
-| `/assets/:id/edit` | Edit Asset | Update an existing asset |
-| `/about` | About | Team members and project information |
-| `*` | Not Found | Fallback for unknown routes |
+Base URL: `http://localhost:3000/api/v1/assets` · all bodies are JSON.
+
+| Method | Route | Description | Request body | Success | Errors |
+|---|---|---|---|---|---|
+| GET | `/api/v1/assets` | List assets, paginated and sorted: `?page=0&size=10&sort=name,asc` | — | 200 · `Page<Asset>` | — |
+| GET | `/api/v1/assets/{id}` | Find one asset by its id | — | 200 · `Asset` | 404 |
+| POST | `/api/v1/assets` | Add a new asset (id must be empty) | `Asset` | 201 · `Location` header | 400, 409 |
+| PUT | `/api/v1/assets/{id}` | Update an existing asset | `Asset` | 204 | 400, 404, 409 |
+| DELETE | `/api/v1/assets/{id}` | Delete an asset | — | 204 | 404 |
+
+- **400** — the body fails validation (`@Valid`)
+- **404** — no asset with that id (`ObjectNotFoundException`)
+- **409** — the asset tag is already used (the `tag` column is `UNIQUE`)
+
+The list returns a Spring `Page`: `content`, `number`, `size`, `totalElements`,
+`totalPages`. Default page size is 10.
 
 ---
 
-## Documentation
+## Architecture
 
-| Document | Contents |
+```
+React frontend (Vite, :5173)                      Spring Boot backend (:3000)
+┌──────────────────────────────┐                  ┌──────────────────────────────────┐
+│ Pages and components         │                  │ AssetController  @RestController │
+│        ↓                     │   HTTP + JSON    │        ↓                         │
+│ AssetContext  (shared state) │ ───────────────► │ AssetService     business rules  │
+│        ↓                     │ ◄─────────────── │        ↓                         │
+│ api/assetApi.js  (fetch)     │  @CrossOrigin    │ AssetRepository  Spring Data JDBC│
+└──────────────────────────────┘                  │        ↓                         │
+                                                  │ H2 database  schema.sql/data.sql │
+                                                  └──────────────────────────────────┘
+```
+
+### Backend — `backend/assets/src/main/java/edu/psu/se411/assets/`
+
+| Package | Class | Role |
+|---|---|---|
+| `model` | `Asset` | Java record with validation annotations (`@NotBlank`, `@Size`, `@Pattern`, `@PastOrPresent`, `@PositiveOrZero`) |
+| `repository` | `AssetRepository` | Extends `CrudRepository` and `PagingAndSortingRepository`; Spring generates the implementation |
+| `service` | `AssetService` | Business logic; throws `ObjectNotFoundException` for an unknown id |
+| `controller` | `AssetController` | REST endpoints; maps exceptions to 404 / 409; `@CrossOrigin` for the frontend |
+| `exception` | `ObjectNotFoundException` | Custom unchecked exception |
+
+`src/main/resources`: `application.properties` (port 3000, default page size 10),
+`schema.sql` (the `asset` table), `data.sql` (10 sample assets). H2 runs in memory,
+so the data resets on every restart.
+
+### Frontend — `src/`
+
+| Path | Role |
 |---|---|
-| [`docs/REQUIREMENTS.md`](docs/REQUIREMENTS.md) | Functional and non-functional requirements, user stories, traceability matrix |
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Architecture, technology stack, data model, feature walkthrough |
-| [`docs/TEST_REPORT.md`](docs/TEST_REPORT.md) | Test strategy, the 65 test cases, run output |
-| [`docs/CODE_REVIEW.md`](docs/CODE_REVIEW.md) | Security, performance, code quality and reuse review |
-| [`docs/AI_USAGE.md`](docs/AI_USAGE.md) | How AI tooling was used at each stage, as the brief requires |
+| `api/assetApi.js` | The only module that makes HTTP requests; turns error statuses into `ApiError` |
+| `context/AssetContext.jsx` | Shares the API calls with every page; triggers a reload after each write |
+| `pages/` | Dashboard, Assets (list, pagination, find by id), Add, Edit, About |
+| `components/` | Navbar, AssetTable, AssetForm, SearchBar, Pagination, FindById, ConfirmDialog, Toast |
+
+---
+
+## Tests
+
+| Suite | Tool | Tests | What it covers |
+|---|---|---|---|
+| `AssetServiceTest` | JUnit 5 + Mockito (`@Mock`, `@InjectMocks`) | 9 | Every service method, with the repository mocked |
+| `AssetControllerTest` | `@WebMvcTest` + `@MockitoBean` + MockMvc | 12 | Every route, including 400 and 404 responses |
+| `AssetsApplicationTests` | `@SpringBootTest` | 1 | The application context starts |
+| Frontend | Vitest + React Testing Library | 73 | Pages, form, pagination, find by id, HTTP client |
 
 ---
 
 ## Technology stack
 
-| Layer | Choice | Why |
-|---|---|---|
-| UI library | React 18 | Required by the brief; hooks-based function components |
-| Build tool | Vite 5 | Fast dev server with HMR, small production bundle |
-| Routing | React Router 6 | Declarative routes for the navigation menu |
-| State | Context + `useReducer` | Enough for one collection; no external dependency |
-| Testing | Vitest 2 + React Testing Library 16 | Shares Vite's config; tests behaviour, not implementation |
-| Styling | Plain CSS with custom properties | No framework dependency; design tokens in `src/index.css` |
+| Layer | Technology |
+|---|---|
+| Backend | Java 21, Spring Boot 4.1, Spring Web MVC, Spring Data JDBC, Bean Validation |
+| Database | H2 (in memory) |
+| Backend tests | JUnit 5, Mockito, Spring MockMvc |
+| Frontend | React 18, Vite 5, React Router 6, plain CSS |
+| Frontend tests | Vitest, React Testing Library |
 
 ---
 
-## Project structure
+## Part 1 documentation
 
-```
-se411-asset-manager/
-├── docs/                      Documentation (see table above)
-├── index.html                 Vite entry point
-├── package.json
-├── vite.config.js             Build + Vitest configuration
-└── src/
-    ├── main.jsx               Root render, Router + AssetProvider
-    ├── App.jsx                Layout shell and route table
-    ├── index.css              Design tokens and all styling
-    ├── components/            Navbar, AssetTable, AssetForm, SearchBar,
-    │                          ConfirmDialog, StatusBadge, Toast
-    ├── context/               AssetContext.jsx, assetReducer.js
-    ├── data/                  seedAssets.js, assetOptions.js
-    ├── pages/                 Dashboard, Assets, Add, Edit, About, NotFound
-    ├── tests/                 5 test files, 65 tests
-    └── utils/                 assetUtils.js (validation, search, sort, format)
-```
-
----
-
-## Part 2 readiness
-
-Every read and write goes through the four functions exposed by `AssetContext`
-(`addAsset`, `updateAsset`, `deleteAsset`, `getAsset`). Replacing the in-memory
-reducer with `fetch` calls to a REST API changes only `src/context/`; no page or
-component imports the data directly.
+The Part 1 documents are in [`docs/`](docs/): requirements, architecture, test
+report, code review and AI usage. They describe the frontend as it was in Part 1,
+when the data was an in-memory collection.
 
 ---
 
