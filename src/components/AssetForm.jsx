@@ -8,10 +8,16 @@ import { validateAsset } from '../utils/assetUtils'
  * It validates on submit (and clears a field's error as soon as the user fixes
  * it) so the user is never blocked mid-typing. Validation itself lives in
  * assetUtils, not here - this component only decides when to run it.
+ *
+ * Client validation is a convenience; the Spring backend validates again. If
+ * onSubmit rejects (it returns a promise when talking to the API), a 409 is
+ * shown under the tag field and anything else as a form-level message.
  */
 export default function AssetForm({ initialValues = EMPTY_ASSET, existingAssets = [], editingId = null, submitLabel = 'Save asset', onSubmit, onCancel }) {
   const [values, setValues] = useState({ ...EMPTY_ASSET, ...initialValues })
   const [errors, setErrors] = useState({})
+  const [formError, setFormError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   function handleChange(event) {
     const { name, value } = event.target
@@ -25,12 +31,25 @@ export default function AssetForm({ initialValues = EMPTY_ASSET, existingAssets 
     }
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const validationErrors = validateAsset(values, existingAssets, editingId)
     setErrors(validationErrors)
+    setFormError('')
     if (Object.keys(validationErrors).length > 0) return
-    onSubmit(values)
+
+    setSubmitting(true)
+    try {
+      await onSubmit(values)
+    } catch (error) {
+      if (error?.status === 409) {
+        setErrors({ tag: 'This asset tag is already in use.' })
+      } else {
+        setFormError(error?.message || 'Could not save the asset.')
+      }
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const errorFor = (field) =>
@@ -137,8 +156,12 @@ export default function AssetForm({ initialValues = EMPTY_ASSET, existingAssets 
         </label>
       </div>
 
+      {formError ? <div className="alert" role="alert">{formError}</div> : null}
+
       <div className="form__actions">
-        <button type="submit" className="btn btn--primary">{submitLabel}</button>
+        <button type="submit" className="btn btn--primary" disabled={submitting}>
+          {submitting ? 'Saving…' : submitLabel}
+        </button>
         <button type="button" className="btn btn--ghost" onClick={onCancel}>Cancel</button>
       </div>
     </form>

@@ -140,4 +140,28 @@ describe('AssetForm - submission', () => {
     expect(onCancel).toHaveBeenCalledTimes(1)
     expect(onSubmit).not.toHaveBeenCalled()
   })
+
+  it('shows a server 409 under the tag field', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn().mockRejectedValue({ status: 409, message: 'Conflict' })
+    render(<AssetForm onSubmit={onSubmit} onCancel={() => {}} />)
+
+    await user.type(nameField(), 'Another Laptop')
+    await user.type(tagField(), 'PSU-LT-0431')
+    await user.click(screen.getByRole('button', { name: /save asset/i }))
+
+    expect(await screen.findByText(/already in use/i)).toBeInTheDocument()
+  })
+
+  it('shows any other server failure as a form-level message', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn().mockRejectedValue({ status: 0, message: 'Cannot reach the backend.' })
+    render(<AssetForm onSubmit={onSubmit} onCancel={() => {}} />)
+
+    await user.type(nameField(), 'Another Laptop')
+    await user.type(tagField(), 'PSU-LT-0999')
+    await user.click(screen.getByRole('button', { name: /save asset/i }))
+
+    expect(await screen.findByText('Cannot reach the backend.')).toBeInTheDocument()
+  })
 })

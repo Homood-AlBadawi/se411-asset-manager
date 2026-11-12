@@ -450,6 +450,61 @@ code.tag {
 .meta-list dt { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .meta-list dd { margin: 0.15rem 0 0; font-weight: 550; }
 
+/* ---------- Part 2: API states, find by id, pagination ---------- */
+
+.alert {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+.form .alert { margin: 1.2rem 0 0; }
+
+.find-by-id {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.find-by-id .field { width: 11rem; }
+.find-by-id .field__error { flex-basis: 100%; margin-top: 0; }
+
+.found { margin-bottom: 1.25rem; }
+.empty--compact { padding: 1.5rem; }
+.empty--compact p { margin: 0; }
+
+.is-loading { opacity: 0.55; transition: opacity 0.15s; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+.pagination__controls { display: flex; gap: 0.4rem; }
+.pagination__size { display: flex; align-items: center; gap: 0.5rem; }
+.pagination__size select {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font: inherit;
+}
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 720px) {

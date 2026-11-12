@@ -2,13 +2,17 @@ import { useNavigate } from 'react-router-dom'
 import { useAssets } from '../context/AssetContext'
 import AssetForm from '../components/AssetForm'
 
-/** Create. On success the user lands back on the asset list. */
+/**
+ * Create. Sends POST /api/v1/assets; on success the user lands back on the list.
+ * Tag uniqueness is enforced by the database — a duplicate comes back as 409 and
+ * AssetForm shows it under the tag field.
+ */
 export default function AddAssetPage() {
-  const { assets, addAsset } = useAssets()
+  const { addAsset } = useAssets()
   const navigate = useNavigate()
 
-  function handleSubmit(values) {
-    addAsset(values)
+  async function handleSubmit(values) {
+    await addAsset(values)
     navigate('/assets')
   }
 
@@ -23,7 +27,6 @@ export default function AddAssetPage() {
 
       <div className="card">
         <AssetForm
-          existingAssets={assets}
           submitLabel="Add asset"
           onSubmit={handleSubmit}
           onCancel={() => navigate('/assets')}

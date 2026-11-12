@@ -25,7 +25,7 @@ export default function App() {
       </main>
 
       <footer className="app__footer">
-        <p>SE411 Project Part 1 &middot; Prince Sultan University &middot; Homood AlBadawi &amp; Malik Tariq</p>
+        <p>SE411 Project &middot; Prince Sultan University &middot; Homood AlBadawi &amp; Malik Tariq</p>
       </footer>
     </div>
   )

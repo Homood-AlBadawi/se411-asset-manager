@@ -1,13 +1,17 @@
-import { describe, expect, it } from 'vitest'
-import { screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from '../App'
 import renderWithProviders, { testAssets } from './renderWithProviders'
 
+vi.mock('../api/assetApi', () => import('./fakeApi'))
+
 describe('Navigation menu', () => {
-  it('shows a link to every feature', () => {
+  it('shows a link to every feature', async () => {
     renderWithProviders(<App />)
     const nav = screen.getByRole('navigation', { name: /main navigation/i })
+    const totalCard = screen.getByText('Total assets').closest('article')
+    await waitFor(() => expect(within(totalCard).getByText(String(testAssets.length))).toBeInTheDocument())
 
     expect(within(nav).getByRole('link', { name: 'Dashboard' })).toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: 'Assets' })).toBeInTheDocument()
@@ -31,12 +35,12 @@ describe('Navigation menu', () => {
 })
 
 describe('Dashboard route', () => {
-  it('renders the summary counts from the store', () => {
+  it('renders the summary counts from the API', async () => {
     renderWithProviders(<App />)
 
     expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument()
     const totalCard = screen.getByText('Total assets').closest('article')
-    expect(within(totalCard).getByText(String(testAssets.length))).toBeInTheDocument()
+    await waitFor(() => expect(within(totalCard).getByText(String(testAssets.length))).toBeInTheDocument())
   })
 })
 
@@ -49,28 +53,40 @@ describe('End-to-end CRUD through the UI', () => {
     await user.type(screen.getByLabelText(/asset tag/i), 'PSU-PR-900')
     await user.click(screen.getByRole('button', { name: /add asset/i }))
 
-    // Navigated to /assets; the new row is present and the count grew.
-    expect(screen.getByRole('heading', { level: 1, name: 'Assets' })).toBeInTheDocument()
-    expect(screen.getByText('Brother Scanner')).toBeInTheDocument()
-    expect(screen.getByRole('status')).toHaveTextContent(`Showing ${testAssets.length + 1} of ${testAssets.length + 1} assets`)
+    expect(await screen.findByRole('heading', { level: 1, name: 'Assets' })).toBeInTheDocument()
+    expect(await screen.findByText('Brother Scanner')).toBeInTheDocument()
   })
 
-  it('updates an asset through the edit route', async () => {
+  it('shows the server 409 under the tag field when the tag is already taken', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(<App />, { route: '/assets/new' })
+
+    await user.type(screen.getByLabelText(/asset name/i), 'Second MacBook')
+    await user.type(screen.getByLabelText(/asset tag/i), 'PSU-LT-001')
+    await user.click(screen.getByRole('button', { name: /add asset/i }))
+
+    expect(await screen.findByText(/already in use/i)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Add asset' })).toBeInTheDocument()
+  })
+
+  it('loads an asset by id on the edit route and saves the update', async () => {
     const user = userEvent.setup()
     renderWithProviders(<App />, { route: '/assets/1/edit' })
 
-    const nameInput = screen.getByLabelText(/asset name/i)
+    const nameInput = await screen.findByLabelText(/asset name/i)
+    expect(nameInput).toHaveValue('MacBook Pro')
+
     await user.clear(nameInput)
     await user.type(nameInput, 'MacBook Pro M4 Max')
     await user.click(screen.getByRole('button', { name: /save changes/i }))
 
-    expect(screen.getByText('MacBook Pro M4 Max')).toBeInTheDocument()
+    expect(await screen.findByText('MacBook Pro M4 Max')).toBeInTheDocument()
     expect(screen.queryByText('MacBook Pro')).not.toBeInTheDocument()
   })
 
-  it('shows a recoverable message for an unknown asset id', () => {
-    renderWithProviders(<App />, { route: '/assets/does-not-exist/edit' })
-    expect(screen.getByRole('heading', { name: /asset not found/i })).toBeInTheDocument()
+  it('shows a recoverable message for an unknown asset id', async () => {
+    renderWithProviders(<App />, { route: '/assets/999/edit' })
+    expect(await screen.findByRole('heading', { name: /asset not found/i })).toBeInTheDocument()
   })
 
   it('shows a not-found page for an unknown route', () => {

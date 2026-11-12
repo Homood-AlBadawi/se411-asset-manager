@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAssets } from '../context/AssetContext'
 import { formatCurrency, summarize } from '../utils/assetUtils'
@@ -6,7 +7,27 @@ import StatusBadge from '../components/StatusBadge'
 
 /** Landing page: headline counts plus a breakdown by status and category. */
 export default function Dashboard() {
-  const { assets } = useAssets()
+  const { version, fetchAllAssets } = useAssets()
+  const [assets, setAssets] = useState([])
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+    fetchAllAssets()
+      .then((all) => {
+        if (!cancelled) {
+          setAssets(all)
+          setError('')
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [version, fetchAllAssets])
+
   const { total, byStatus, byCategory, totalValue } = summarize(assets)
   const categories = Object.entries(byCategory).sort((a, b) => b[1] - a[1])
   const largest = categories.length > 0 ? categories[0][1] : 1
@@ -20,6 +41,8 @@ export default function Dashboard() {
         </div>
         <Link className="btn btn--primary" to="/assets/new">Add asset</Link>
       </div>
+
+      {error ? <div className="alert">{error}</div> : null}
 
       <div className="stats">
         <article className="stat">

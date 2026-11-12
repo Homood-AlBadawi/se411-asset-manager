@@ -14,6 +14,9 @@ const STACK = [
   { name: 'React Router 6', note: 'Client-side routing for the menu' },
   { name: 'Vitest + React Testing Library', note: 'Unit and component tests' },
   { name: 'Plain CSS', note: 'Design tokens, no UI framework' },
+  { name: 'Spring Boot 4.1 (Java 21)', note: 'REST API at /api/v1/assets' },
+  { name: 'Spring Data JDBC + H2', note: 'Persistence with paging and sorting' },
+  { name: 'JUnit 5 + Mockito', note: 'Backend unit and web-layer tests' },
 ]
 
 export default function AboutPage() {
@@ -22,7 +25,7 @@ export default function AboutPage() {
       <div className="page-head">
         <div>
           <h1>About</h1>
-          <p className="page-head__sub">SE411 &mdash; Software Engineering Project, Part 1</p>
+          <p className="page-head__sub">SE411 &mdash; Software Engineering Project, Parts 1 &amp; 2</p>
         </div>
       </div>
 
@@ -52,9 +55,9 @@ export default function AboutPage() {
           display them.
         </p>
         <p>
-          In this first part the inventory is held entirely in memory as a collection of JavaScript objects &mdash;
-          there is no database and no backend. The data layer sits behind a small context API so that Part 2 can
-          replace it with a real REST backend without touching the components.
+          The React frontend talks to a Spring Boot REST API, which stores the inventory in an H2 database
+          through Spring Data JDBC. Listing is paginated on the server, assets can be looked up by ID, and the
+          backend validates every write again &mdash; including tag uniqueness, which is enforced by the database.
         </p>
 
         <h3>Technology stack</h3>
@@ -85,7 +88,7 @@ export default function AboutPage() {
           </div>
           <div>
             <dt>Deliverable</dt>
-            <dd>Project Part 1 &mdash; React frontend</dd>
+            <dd>Project Parts 1 &amp; 2 &mdash; React frontend + Spring backend</dd>
           </div>
         </dl>
       </div>
